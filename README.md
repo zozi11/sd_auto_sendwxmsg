@@ -6,6 +6,8 @@
 
 更主要的作用是，当批量任务执行中途异常终止（俗称崩显存，崩内存，CUDA），自动推送一条微信消息，通知你及时检查处理。
 
+![Image text](https://github.com/zozi11/sd_auto_sendwxmsg/blob/main/webUI%E7%95%8C%E9%9D%A2%E4%B8%AD%E7%9A%84%E5%8A%9F%E8%83%BD%E5%9D%97.png)
+
 
 微信消息通知接口来自pushplus，新用户需要注册，可以扫码自动注册。
 
