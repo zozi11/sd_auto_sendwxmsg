@@ -26,6 +26,7 @@ https://pushplus.plus
 登录后点击 发送消息-一对一消息，即可查看你的token
 
 将本扩展安装好之后，进入webUI的设置-微信推送设置，将token填入并保存，之后重载。
+![Image text](https://github.com/zozi11/sd_auto_sendwxmsg/blob/main/%E5%A6%82%E4%BD%95%E5%A1%AB%E5%86%99token.jpg)
 
 一切顺利的话，你就可以在界面中，大概在ADetailer和ControlNet标签最下方，看到新增的 自动推送微信消息 标签了。
 
