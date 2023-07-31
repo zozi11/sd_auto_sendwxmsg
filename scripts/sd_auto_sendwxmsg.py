@@ -4,14 +4,54 @@ import modules.shared as shared
 import urllib.request
 import urllib.parse
 from modules import script_callbacks
+import time
+import threading
 
 
 
-# 填写你的token，从https://www.pushplus.plus/ 获取，发送消息=>一对一消息
-pushtoken = 'c217a446b9c24e55a6d8b535ab95d07b'  
+# 请在设置中填写你的token，位置在设置-微信推送信息
+pushtoken = shared.opts.plus_token
 
+isworking = False
+hasthread=False
+totalcount=0
 
+def mainchk():
+    global isworking
+    while True:
+        if shared.state.job:
+            isworking=True
+            check_death()
+        time.sleep(10)
 
+thread = threading.Thread(target=mainchk)
+thread.start()
+
+def check_death():
+    global hasthread
+    if not hasthread:
+        hasthread=True
+        thread = threading.Thread(target=chk_thread)
+        thread.start()
+
+def chk_thread():
+    global isworking,hasthread,totalcount
+    while isworking:
+        if not shared.state.job:
+            workover()
+            isworking=False
+            hasthread=False
+        else:
+            time.sleep(5)
+
+def mydebug():
+    # 获取 shared.state 对象的属性列表
+    attributes = dir(shared.state)
+    print(f"------------------")
+    # 循环打印每个属性的名称和值
+    for attribute in attributes:
+        value = getattr(shared.state, attribute)
+        print(f"{attribute}: {value}")
 
 i=0
 checked=False
@@ -23,16 +63,18 @@ def checkbox_changed(checkbox_input):
         checked=False
     
 def on_image_saved(params : script_callbacks.ImageSaveParams):
-    global i
+    global i,isworking,totalcount
     i=i+1
-def on_image_grid(params : script_callbacks.ImageGridLoopParams):
-    #on_image_grid会在生成任务完毕后调用，暂时还没发现问题，先用着
-    global i,pushtoken,checked
+    totalcount=shared.state.job_count
+    isworking=True
+    check_death()
+
+def workover():
+    global i,pushtoken,checked,totalcount
     if not checked:
-        print("任务结束，当前未启用微信消息推送，不推送微信消息" )
+        print("当前未启用微信消息推送，不推送微信消息" )
         return
     html="本次生成图片总数："+str(i)+"<br>"
-    totalcount=shared.state.job_count
     nowjob=shared.state.job_no + 1
     if nowjob < totalcount:
         v=totalcount-nowjob
@@ -41,18 +83,12 @@ def on_image_grid(params : script_callbacks.ImageGridLoopParams):
     else:
         wxtitle="成功执行完毕！"
         html="图片已经全部成功生成。<br>本次计划批次："+str(totalcount)+"<br><br> -------------------<br><br>本次总计成功生成 <b color=red>"+ str(i)+"</b> 张图片。"
-    #print("time_start: %d" % shared.state.time_start)
-    #print("job_count: %d" % shared.state.job_count)
-    #print("job_no: %d" % shared.state.job_no)
-    #print("sampling_step: %d" % shared.state.sampling_step)
-    #print("running: %d" % (shared.state.job_count * shared.state.sampling_step))
-    #print("sampling_steps: %d" % shared.state.sampling_steps)
     rehtml=wxsend(wxtitle,html)
-    print(rehtml)
     i=0
     print("微信消息推送完毕" )
 
 def wxtest(tmp):
+    #mydebug()
     global i,pushtoken
     html="作者：叶小猴<br>欢迎加入墨幽炼丹阁，QQ群：858495398"
     rehtml=wxsend("测试微信消息",html)
@@ -66,7 +102,6 @@ def wxsend(wxtitle,wxcontent):
     webpage_content = byte_content.decode('utf-8')
     return webpage_content
     
-script_callbacks.on_image_grid(on_image_grid)
 script_callbacks.on_image_saved(on_image_saved)
 class SendWxMsg(scripts.Script):
     # Extension title in menu UI
@@ -77,8 +112,8 @@ class SendWxMsg(scripts.Script):
 
     def ui(self,is_img2img):
         global md
-        global markdown
-        with gr.Accordion('自动推送微信消息', open=False):
+        global markdown,pushtoken
+        with gr.Accordion('自动推送微信消息', open=True):
             with gr.Row():
                 checkbox = gr.Checkbox(
                     False,
@@ -88,5 +123,5 @@ class SendWxMsg(scripts.Script):
                 btn = gr.Button("点击发送测试消息")
                 btn.click(wxtest)
             with gr.Row():
-                markdown=gr.Markdown("注意，你需要先在脚本中配置token，文件位置：extensions/sd_auto_sendwxmsg/scripts/sd_auto_sendwxmsg.py")
+                markdown=gr.Markdown("注意，你需要先在设置中配置正确的plus_token，当前token："+pushtoken)
                 return [checkbox,  btn]
